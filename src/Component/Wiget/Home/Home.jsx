@@ -9,12 +9,19 @@ import Orderplace from '../Order_place/orderplace'
 import OrderSummary from '../Order_Summary/Ordersummary'
 
 const Home = () => {
-  const [cart, setcart] = useState([])
+  const [cart, setcart] = useState(() => {
+    const storecart = localStorage.getItem('cart')
+    return storecart ? JSON.parse(storecart) : []
+  })
   const [activepanel, setactivepanel] = useState(null)
   const [isscrolled, setisscrolled] = useState(false)
   const [ordersummary, setordersummary] = useState(false)
   const [orderplaced, setorderplaced] = useState(false)
-  const [wishlist, setwishlist] = useState([])
+
+  const [wishlist, setwishlist] = useState(() => {
+    const storewishlist = localStorage.getItem('wishlist')
+    return storewishlist ? JSON.parse(storewishlist) : []
+  })
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
   const totalitems = cart.reduce((acc, item) => acc + item.quantity, 0)
@@ -26,6 +33,12 @@ const Home = () => {
     window.addEventListener('scroll', changenavbar)
     return () => window.removeEventListener('scroll', changenavbar)
   }, [])
+
+  // Save to localStorage
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart))
+    localStorage.setItem('wishlist', JSON.stringify(wishlist))
+  }, [cart, wishlist])
 
   const [searchterm, setsearchterm] = useState('')
 
@@ -45,11 +58,17 @@ const Home = () => {
   }
 
   const quantityincrement = (product) => {
-    setcart(prev => prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+    setcart(prev => prev.map(item =>
+      item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+    ))
   }
 
   const quantitydecrement = (product) => {
-    setcart(prev => prev.map(item => item.id === product.id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item))
+    setcart(prev => prev.map(item =>
+      item.id === product.id && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 }
+        : item
+    ))
   }
 
   const addtocart = (product) => {
@@ -58,7 +77,6 @@ const Home = () => {
     setcart([...cart, { ...product, quantity: 1 }])
   }
 
-  // ✅ Fixed: duplicate check
   const addtowishlist = (product) => {
     const alreadyadded = wishlist.find(item => item.id === product.id)
     if (alreadyadded) { alert('Item is already in wishlist'); return }
@@ -78,7 +96,7 @@ const Home = () => {
         isscrolled={isscrolled}
         handlepanel={handlepanel}
         totalitems={totalitems}
-        wishlistcount={wishlist.length} // ✅ Fixed: dynamic badge
+        wishlistcount={wishlist.length}
       />
       <Banner />
       <Products
@@ -86,6 +104,7 @@ const Home = () => {
         addtocart={addtocart}
         addtowishlist={addtowishlist}
       />
+
       {activepanel === 'cart' && (
         <Cart
           activepanel={activepanel}
@@ -100,8 +119,8 @@ const Home = () => {
           setordersummary={setordersummary}
         />
       )}
+
       {activepanel === 'wishlist' && (
-        // ✅ Fixed: wishlist prop ab pass ho raha hai
         <Wishlist
           activepanel={activepanel}
           closepanel={closepanel}
@@ -111,6 +130,7 @@ const Home = () => {
           clearwishlist={clearwishlist}
         />
       )}
+
       {ordersummary && (
         <OrderSummary
           cart={cart}
@@ -123,7 +143,10 @@ const Home = () => {
           closepanel={closepanel}
         />
       )}
-      {orderplaced && <Orderplace setorderplaced={setorderplaced} />}
+
+      {orderplaced && (
+        <Orderplace setorderplaced={setorderplaced} />
+      )}
     </div>
   )
 }
